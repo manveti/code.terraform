@@ -1,5 +1,6 @@
 CHANNEL = "charge"
 SLEEP_INTERVAL = 0.1
+MAX_SKIPS = 3
 
 fleet = get_component("fleet")
 
@@ -40,11 +41,22 @@ class ChargeRequester:
         self._request = None
 
 
+def getChargerSites():
+    network = get_component("outpost_network")
+    sites = []
+    for outpost in network.outposts():
+        if outpost.buildings("charging_station"):
+            sites.append(outpost)
+    return sites
+
+
 class ChargerHandler:
     def __init__(self, charger):
         self.charger = charger
-        self.lastIdx = -1
+        self.x = charger.outpost.x
+        self.y = charger.outpost.y
         self._comms = None
+        self.skips = {}
         self.queue = []
 
     def getComms(self):
@@ -61,20 +73,56 @@ class ChargerHandler:
                 continue
             self.charger.charge(vehicleId)
 
+    def _chargeRemoteRequest(self):
+        comms = self.getComms()
+        if not comms:
+            return False
+        pending = set(msg.id for msg in comms.pending(CHANNEL))
+        prune = set(self.skips.keys()).difference(pending)
+        for msgId in prune:
+            del self.skips[msgId]
+        chargers = getChargerSites()
+        for msg in comms.pending(CHANNEL):
+            vehicleId = msg.value
+            vehicle = get_component(vehicleId)
+            if vehicle.rescue_status() in ("outbound", "charging"):
+                continue
+            pos = vehicle.nav.get_position()
+            dx = self.x - pos.x
+            dy = self.y - pos.y
+            dSquared = (dx * dx) + (dy * dy)
+            gotCloser = False
+            for charger in chargers:
+                dx = charger.x - pos.x
+                dy = charger.y - pos.y
+                if (dx * dx) + (dy * dy) < dSquared:
+                    gotCloser = True
+                    break
+            if gotCloser:
+                skipCount = self.skips.get(msg.id, 0)
+                if skipCount < MAX_SKIPS:
+                    self.skips[msg.id] = skipCount + 1
+                    continue
+            msg = comms.receive(CHANNEL, msg.id)
+            if msg.status == "ok":
+                self.charger.dispatch_rescue(msg.packet.value)
+                return True
+        return False
+
     def chargeRemote(self):
         if self.charger.is_rescuing():
             return
-        comms = self.getComms()
-        if comms:
-            msg = comms.receive(CHANNEL)
-            if msg.status == "ok":
-                self.charger.dispatch_rescue(msg.packet.value)
-                return
+        if self._chargeRemoteRequest():
+            return
         if not self.queue:
-            self.queue = [v.id for v in fleet.vehicles() if v.battery_level <= 0]
+            vehicles = [v for v in fleet.vehicles() if v.battery_level <= 0]
+            vehicles.sort(key=lambda v: ((v.x - self.x) * (v.x - self.x)) + ((v.y - self.y) * (v.y - self.y)))
+            self.queue = [v.id for v in vehicles]
         while self.queue:
             vehicleId = self.queue.pop(0)
             vehicle = get_component(vehicleId)
+            if vehicle.rescue_status() in ("outbound", "charging"):
+                continue
             if (vehicle.battery.level() >= 1) or (vehicle.battery.capacity() <= 0):
                 continue
             self.charger.dispatch_rescue(vehicleId)

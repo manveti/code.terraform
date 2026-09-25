@@ -1,12 +1,12 @@
-import rover_utils
+import scan_rover_utils
 
-SCAN_START_IDX = 22
+SCAN_START_IDX = 286
 START_IDX_KEY = "rover_scan_idx"
 
 notebook = get_component("notebook")
 nocturna = get_component("nocturna")
 
-rover = rover_utils.ScanRoverHandler(self)
+rover = scan_rover_utils.ScanRoverHandler(self)
 
 def doScan():
     startIdx = SCAN_START_IDX

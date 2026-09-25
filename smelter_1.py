@@ -3,9 +3,8 @@ import storage_utils
 def _haveMaterials(recipe, count=1):
     for (material, needed) in recipe.inputs.items():
         needed *= count
-        storageName = storage_utils.formatStorage(material)
-        storage = get_component_by_name(storageName)
-        if (not storage) or (storage.count(material) < needed):
+        storage = storage_utils.getStorage(self.outpost, material)
+        if (not storage) or (storage.count() < needed):
             return False
     return True
 
@@ -13,18 +12,18 @@ def prepareSmeltRun(recipe):
     result = self.set_recipe(recipe.id)
     if result.status != "ok":
         print(f"Couldn't set recipe {recipe.id}: {result.message}")
-        return False
-    storageName = storage_utils.formatStorage(recipe.output_item)
-    storage_utils.connectStorageName(self.output, storageName)
-    return True
+        return None
+    storage = storage_utils.getStorage(self.outpost, recipe.output_item)
+    storage.connect(self.output)
+    return storage
 
 def takeRecipe(recipe, count=1):
     if not _haveMaterials(recipe, count):
         return False
     for (material, needed) in recipe.inputs.items():
         needed *= count
-        storageName = storage_utils.formatStorage(material)
-        storage_utils.connectStorageName(self.input, storageName)
+        storage = storage_utils.getStorage(self.outpost, material)
+        storage.connect(self.input)
         notified = False
         while needed > 0:
             result = self.input.take(material, needed)

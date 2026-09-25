@@ -4,12 +4,13 @@ clock = get_component("clock")
 orders = get_component("orders")
 
 def _isFillable(order):
+    if order.status == "completed":
+        return False
     if (order.expires_day) and (clock.get_day() >= order.expires_day - 1):
         return False
     for (material, needed) in order.requires.items():
-        storageName = storage_utils.formatStorage(material)
-        storage = get_component_by_name(storageName)
-        if (not storage) or (storage.count(material) < needed):
+        storage = storage_utils.getStorage(self.outpost, material)
+        if (not storage) or (storage.count() < needed):
             return False
     return True
 
@@ -28,8 +29,8 @@ def fillOrder(order):
     self.set_order(order.id)
     self.set_enabled(True)
     for (material, needed) in order.requires.items():
-        storageName = storage_utils.formatStorage(material)
-        storage_utils.connectStorageName(self.input, storageName)
+        storage = storage_utils.getStorage(self.outpost, material)
+        storage.connect(self.input)
         notified = False
         while needed > 0:
             result = self.input.take(material, needed)
@@ -43,6 +44,7 @@ def fillOrder(order):
     while sum(slot.count for slot in self.slots()) > 0:
         sleep(storage_utils.SLEEP_INTERVAL)
 
-#print(fillableWeeklyOrders())
+print(fillableWeeklyOrders())
 #print(fillableCampaignOrders())
-fillOrder(fillableCampaignOrders()[1])
+#fillOrder(fillableCampaignOrders()[1])
+#fillOrder(fillableWeeklyOrders()[0])
