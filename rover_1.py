@@ -1,18 +1,20 @@
-import rover_utils
+import drill_rover_utils
 
 SITE_COORDS = (30, 30)
+HOME_COORDS = (0, 0)
 
-rover = rover_utils.DrillRoverHandler(self)
+rover = drill_rover_utils.DrillRoverHandler(self)
+rover.mineLoop(SITE_COORDS, HOME_COORDS)
 
-def mineOneSite():
-    site = rover.getMiningSite(*SITE_COORDS)
-    if not site:
-        return
-    while True:
-        rover.mineAt(site)
-        rover.waitForCharge()
-
-mineOneSite()
+#def mineOneSite():
+#    site = rover.getMiningSite(*SITE_COORDS)
+#    if not site:
+#        return
+#    while True:
+#        rover.mineAt(site)
+#        rover.waitForCharge()
+#
+#mineOneSite()
 
 # SCAN_START_IDX = 22
 # START_IDX_KEY = "rover_scan_idx"

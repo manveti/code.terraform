@@ -41,13 +41,12 @@ class ChargeRequester:
         self._request = None
 
 
+def hasCharger(outpost):
+    return bool(outpost.buildings("charging_station"))
+
 def getChargerSites():
     network = get_component("outpost_network")
-    sites = []
-    for outpost in network.outposts():
-        if outpost.buildings("charging_station"):
-            sites.append(outpost)
-    return sites
+    return [outpost for outpost in network.outposts() if hasCharger(outpost)]
 
 
 class ChargerHandler:
@@ -86,6 +85,7 @@ class ChargerHandler:
             vehicleId = msg.value
             vehicle = get_component(vehicleId)
             if vehicle.rescue_status() in ("outbound", "charging"):
+                print(f"Ignoring charge for {vehicleId}; rescue already enroute")
                 continue
             pos = vehicle.nav.get_position()
             dx = self.x - pos.x
@@ -101,10 +101,12 @@ class ChargerHandler:
             if gotCloser:
                 skipCount = self.skips.get(msg.id, 0)
                 if skipCount < MAX_SKIPS:
+                    print(f"Skipping {vehicleId}; closer station should handle")
                     self.skips[msg.id] = skipCount + 1
                     continue
             msg = comms.receive(CHANNEL, msg.id)
             if msg.status == "ok":
+                print(f"Handling requested charge for {vehicleId}")
                 self.charger.dispatch_rescue(msg.packet.value)
                 return True
         return False

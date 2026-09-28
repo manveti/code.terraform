@@ -32,7 +32,7 @@ class RoverHandler:
             cargo = self.rover.cargo.count()
         cost = BASE_CONSUMPTION
         for module in self.rover.modules():
-            if module.type in HEAVY_MODULES:
+            if module.module_id in HEAVY_MODULES:
                 cost += HEAVY_MODULE_CONSUMPTION
         cost += cargo * CARGO_CONSUMPTION
         cost *= sqrt(throttle)
@@ -70,6 +70,7 @@ class RoverHandler:
             self.rover.nav.brake()
             return
         if self.rover.battery.wh() <= self.moveCost(x, y, throttle):
+            print("Requesting charge")
             self.requestCharge()
         self.rover.nav.set_target(x, y)
         self.rover.nav.set_throttle(throttle)
@@ -78,6 +79,7 @@ class RoverHandler:
             if self.rover.rescue_status() == "charging":
                 self.rover.nav.brake()
                 self.waitForCharge()
+                print("Got requested charge")
             elif self.rover.nav.throttle() < throttle:
                 self.rover.nav.set_target(x, y)
                 self.rover.nav.set_throttle(throttle)
@@ -98,8 +100,10 @@ class RoverHandler:
                 bestCharger = charger
                 minDeficit = chDeficit
         if (minDeficit is not None) and (minDeficit < deficit * CHARGER_THRESHOLD):
+            print("Going to base to charge")
             self.moveTo(bestCharger.x, bestCharger.y, throttle, *args, **kwargs)
             self.waitForCharge()
         else:
+            print("Not going to make it to destination; requesting charge")
             self.requestCharge()
         self.moveTo(x, y, throttle, *args, **kwargs)

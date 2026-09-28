@@ -113,7 +113,7 @@ def smeltOngoing(recipe):
 #print(self.list_recipes())
 #print(self.input.capacity())
 recipe = self.find_recipe("smelt_iron_ingot")
-smeltBatch(recipe, 23)
+smeltBatch(recipe, 300)
 
 
 #####

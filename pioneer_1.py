@@ -1,6 +1,6 @@
 import scan_rover_utils
 
-SCAN_START_IDX = 286
+SCAN_START_IDX = 0
 START_IDX_KEY = "rover_scan_idx"
 
 notebook = get_component("notebook")
@@ -35,3 +35,4 @@ def doScan():
             notebook.set(START_IDX_KEY, idx + 1)
 
 doScan()
+#rover.moveTo(0,0,1)

@@ -100,6 +100,7 @@ class StorageBinHandler(StorageHandler):
     def free(self):
         return self.storage.space()
 
+
 class WarehouseStorageHandler(StorageHandler):
     """Handler for WarehouseSlot"""
     def __init__(self, warehouse, slot, itemId):
@@ -158,3 +159,27 @@ def getStorage(outpost, itemId, storageType=None):
             elif building.material() in (itemId, ""):
                 result = StorageHandler(building, itemId)
     return result
+
+
+class InventoryStorageHandler(StorageHandler):
+    """Handler for Inventory"""
+    def __init__(self, itemId):
+        super().__init__(get_component("inventory"), itemId)
+
+    @property
+    def outpost(self):
+        return get_component("outpost_home")
+
+    @property
+    def x(self):
+        return 0
+
+    @property
+    def y(self):
+        return 0
+
+    def capacity(self):
+        return self.storage.get_size()
+
+    def free(self):
+        return self.storage.get_size() - self.storage.get_used()

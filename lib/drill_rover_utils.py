@@ -108,4 +108,7 @@ class DrillRoverHandler(cargo_rover_utils.CargoRoverHandler):
         while True:
             self.mineAt(site, homeCost)
             self.deliverTo(outpost, site.item_id)
+            while self.rover.cargo.count() > 0:
+                sleep(SLEEP_INTERVAL)
+                self.deliverTo(outpost, site.item_id)
             self.waitForCharge()
