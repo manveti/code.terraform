@@ -29,6 +29,8 @@ def fillOrder(order):
     self.set_order(order.id)
     self.set_enabled(True)
     for (material, needed) in order.requires.items():
+        if order.shipped.get(material, 0) >= needed:
+            continue
         storage = storage_utils.getStorage(self.outpost, material)
         storage.connect(self.input)
         notified = False
@@ -44,7 +46,7 @@ def fillOrder(order):
     while sum(slot.count for slot in self.slots()) > 0:
         sleep(storage_utils.SLEEP_INTERVAL)
 
-#print(fillableWeeklyOrders())
+print(fillableWeeklyOrders())
 #print(fillableCampaignOrders())
-fillOrder(fillableCampaignOrders()[0])
+#fillOrder(fillableCampaignOrders()[0])
 #fillOrder(fillableWeeklyOrders()[0])

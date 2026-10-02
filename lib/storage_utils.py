@@ -38,24 +38,18 @@ ITEM_STORAGE_TYPE_MAP = {
 
 
 def getOutpost(outpost):
+    network = get_component("outpost_network")
+    if hasattr(outpost, "coords"):
+        network.nearest(*outpost.coords())
     if type(outpost) == type(""):
         outpostObj = get_component(outpost)
         if not outpostObj:
             outpostObj = get_component_by_name(outpost)
-        return outpostObj
+        if outpostObj:
+            return network.nearest(*outpostObj.coords())
+        return None
     if (type(outpost) in (type(()), type([]))) and (len(outpost) == 2):
-        (x, y) = outpost
-        nearest = None
-        nearestD2 = None
-        network = get_component("outpost_network")
-        for outpostObj in network.outposts():
-            dx = outpostObj.x - x
-            dy = outpostObj.y - y
-            dSquared = (dx * dx) + (dy * dy)
-            if (nearest is None) or (dSquared < nearestD2):
-                nearest = outpostObj
-                nearestD2 = dSquared
-        return nearest
+        return network.nearest(*outpost)
     return outpost
 
 
@@ -77,6 +71,10 @@ class StorageHandler:
     def y(self):
         return self.outpost.y
 
+    def valid(self):
+        itemId = self.storage.material()
+        return (not itemId) or (itemId == self.itemId)
+
     def count(self):
         return self.storage.count(self.itemId)
 
@@ -94,8 +92,12 @@ class StorageHandler:
 
 class StorageBinHandler(StorageHandler):
     """Handler for StorageBin"""
+    def valid(self):
+        itemId = self.storage.get_material()
+        return (not itemId) or (itemId == self.itemId)
+
     def capacity(self):
-        return self.storage.capacity()
+        return self.storage.get_capacity()
 
     def free(self):
         return self.storage.space()
@@ -107,6 +109,10 @@ class WarehouseStorageHandler(StorageHandler):
         super().__init__(warehouse, itemId)
         self.slot = slot
 
+    def valid(self):
+        itemId = self.slot.item
+        return (not itemId) or (itemId == self.itemId)
+
     def count(self):
         return self.slot.count
 
@@ -116,12 +122,18 @@ class WarehouseStorageHandler(StorageHandler):
 
 class FluidStorageHandler(StorageHandler):
     """Handler for GasTank and (Large)LiquidTank"""
+    def valid(self):
+        itemId = self.storage.fluid()
+        return (not itemId) or (itemId == self.itemId)
+
     def count(self):
         return self.storage.level()
 
 
 def getStorage(outpost, itemId, storageType=None):
     outpost = getOutpost(outpost)
+    if not outpost:
+        return None
     if storageType is None:
         storageType = ITEM_STORAGE_TYPE_MAP.get(itemId, STORAGE_TYPE_LARGEST)
     if type(storageType) == type(""):
