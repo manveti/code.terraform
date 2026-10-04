@@ -69,10 +69,11 @@ def itemName(itemId):
 
 
 class ProductionSite:
-    def __init__(self, local, produces, exports=None):
+    def __init__(self, local, produces, exports=None, onDemand=()):
         self.local = set(local)
         self.produces = set(produces)
         self.exports = exports or {}
+        self.onDemand = set(onDemand)
 
 PRODUCTION_SITES = {
     "Nocturna Base": ProductionSite(
@@ -82,6 +83,10 @@ PRODUCTION_SITES = {
             "water",
         ],
         produces=[
+            "iron_ingot",
+            "turbine_rotor",
+        ],
+        onDemand=[
             "battery_pack",
             "cargo_pod_large",
             "cargo_pod_medium",
@@ -104,7 +109,6 @@ PRODUCTION_SITES = {
             "habitat_upgrade_pack_mk2",
             "heat_upgrade_pack_mk4",
             "heli_thruster",
-            "iron_ingot",
             "lead_cask",
             "lightning_rod",
             "mining_drill_kit",
@@ -124,7 +128,6 @@ PRODUCTION_SITES = {
             "sprinkler_upgrade_pack_mk2",
             "sprinkler_upgrade_pack_mk3",
             "thermal_cap_kit",
-            "turbine_rotor",
             "water_pump",
         ],
     ),
@@ -188,13 +191,10 @@ PRODUCTION_SITES = {
         produces=[
             "circuit_panel",
             "control_unit",
-            "gas_pipe_bridge",
             "gas_pipe_segment",
             "glass",
-            "liquid_pipe_bridge",
             "liquid_pipe_segment",
             "machine_frame",
-            "power_line_bridge",
             "power_line_segment",
             "pressure_valve",
             "tank_lining",
@@ -209,6 +209,11 @@ PRODUCTION_SITES = {
             "pressure_valve": set(["Nocturna Base", "Farm Supplies"]),
             "tank_lining": set(["Nocturna Base"]),
         },
+        onDemand=[
+            "gas_pipe_bridge",
+            "liquid_pipe_bridge",
+            "power_line_bridge",
+        ],
     ),
     "Iron Foundry": ProductionSite(
         local=["iron_ore"],
@@ -246,3 +251,4 @@ PRODUCTION_SITES = {
         },
     ),
 }
+ON_DEMAND = set(prod for site in PRODUCTION_SITES.values() for prod in site.onDemand)

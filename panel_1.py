@@ -3,7 +3,6 @@ import production_utils
 import storage_utils
 
 OVERVIEW = "Overview"
-HOME_OUTPOST = "Nocturna Base"
 INPUT_STATUS_INVALID = 0
 INPUT_STATUS_EMPTY = 1
 INPUT_STATUS_VALID = 2
@@ -297,7 +296,7 @@ class ProductionOutpost:
 outposts = [ProductionOutpost(name) for name in production_map.PRODUCTION_SITES.keys()]
 outposts.sort(key=lambda outpost: outpost.name)
 outpostsByName = {outpost.name: outpost for outpost in outposts}
-details = [OVERVIEW] + [o.name for o in outposts if o.name != HOME_OUTPOST]
+details = [OVERVIEW] + [o.name for o in outposts]
 
 #TODO: call updateLinks (or maybe even regen outposts) every once in a while
 while True:

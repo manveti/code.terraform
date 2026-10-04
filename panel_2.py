@@ -111,18 +111,3 @@ while True:
             maxX = panel.width()
         products[i].drawStatus(panel, x, y, maxX)
         y += 28
-# while True:
-#     y = 44
-#     panel.draw_text(24, 44, "Input", size=20)
-#     panel.draw_text(panel.width() - 80, 44, "Output", size=20)
-#     y += 10
-#     if detailSel != OVERVIEW:
-#         if (detailSel not in outpostsByName):
-#             continue
-#         panel.draw_text(164, 44, "Product", size=20)
-#         outpostsByName[detailSel].drawDetails(panel, 0, y)
-#         continue
-#     panel.draw_text(164, 44, "Outpost", size=20)
-#     for outpost in outposts:
-#         outpost.drawSummary(panel, 0, y)
-#         y += 28

@@ -2,19 +2,61 @@ import production_map
 import storage_utils
 
 DEFAULT_BATCH_SIZE = 10
+CHANNEL = "production_requests"
+
+
+class ProductionRequester:
+    def __init__(self):
+        self._comms = None
+
+    def getComms(self):
+        if not self._comms:
+            self._comms = get_component("comms")
+        return self._comms
+
+    def requestProduction(self, itemId, count):
+        comms = self.getComms()
+        while not comms:
+            sleep(storage_utils.SLEEP_INTERVAL)
+            comms = self.getComms()
+        msg = {"item": itemId, "count": count}
+        result = comms.send(CHANNEL, msg)
+        while result.status != "ok":
+            sleep(storage_utils.SLEEP_INTERVAL)
+            result = comms.send(CHANNEL, msg)
+
+    def cancelProduction(self, itemId):
+        comms = self.getComms()
+        while not comms:
+            sleep(storage_utils.SLEEP_INTERVAL)
+            comms = self.getComms()
+        toCancel = []
+        for msg in comms.pending(CHANNEL):
+            if msg.value.get("item") == itemId:
+                toCancel.append(msg.id)
+        for msgId in toCancel:
+            comms.cancel(CHANNEL, msgId)
 
 
 class ProducerHandler:
     def __init__(self, machine):
+        self._comms = None
         self._storage = {}
         self.machine = machine
         self.outpost = storage_utils.getOutpost(machine.outpost)
         self.produces = set()
         self._exports = {}
+        self.onDemand = set()
         productionSite = production_map.PRODUCTION_SITES.get(machine.outpost.name)
         if productionSite:
             self.produces = productionSite.produces
             self._exports = productionSite.exports
+            self.onDemand = productionSite.onDemand
+
+    def getComms(self):
+        if not self._comms:
+            self._comms = get_component("comms")
+        return self._comms
 
     def getStorage(self, outpostName, itemId):
         if outpostName not in self._storage:
@@ -315,22 +357,65 @@ class ProducerHandler:
         self.monitorProductionRun(recipe, count)
         self.finishProductionRun(recipe)
 
+    def getProductionRequest(self):
+        comms = self.getComms()
+        if not comms:
+            return None
+        recipes = {}
+        for recipe in self.machine.list_recipes():
+            if recipe.output_item in self.onDemand:
+                recipes[recipe.output_item] = recipe
+        for msg in comms.pending(CHANNEL):
+            itemId = msg.value.get("item")
+            recipe = recipes.get(itemId)
+            if not recipe:
+                continue
+            reqCount = msg.value.get("count", 0)
+            if reqCount <= 0:
+                continue
+            count = reqCount
+            avail = self.recipeIngredientsAvailable(recipe)
+            if avail < count:
+                count = avail
+            if count <= 0:
+                continue
+            space = self.recipeSpaceAvailable(recipe)
+            if space < count:
+                count = space
+            if count <= 0:
+                continue
+            if count < reqCount:
+                newMsg = msg.value.copy()
+                newMsg["count"] = reqCount - count
+                result = comms.update(CHANNEL, msg.id, newMsg)
+                if result.status != "ok":
+                    continue
+            else:
+                result = comms.receive(CHANNEL, msg.id)
+                if result.status != "ok":
+                    continue
+            return (msg.value["item"], count)
+
     def productionLoop(self, batch=DEFAULT_BATCH_SIZE):
         lastRecipe = None
         while True:
-            recipes = self.getRecipes()
-            recipes.sort(key=lambda recipe: -self.recipeDemand(recipe))
             recipe = None
             count = 0
-            while (recipes) and (count <= 0):
-                recipe = recipes.pop(0)
-                count = batch
-                avail = self.recipeIngredientsAvailable(recipe)
-                if avail < count:
-                    count = avail
-                space = self.recipeSpaceAvailable(recipe)
-                if space < count:
-                    count = space
+            request = self.getProductionRequest()
+            if request:
+                (recipe, count) = request
+            if (not recipe) or (count <= 0):
+                recipes = self.getRecipes()
+                recipes.sort(key=lambda recipe: -self.recipeDemand(recipe))
+                while (recipes) and (count <= 0):
+                    recipe = recipes.pop(0)
+                    count = batch
+                    avail = self.recipeIngredientsAvailable(recipe)
+                    if avail < count:
+                        count = avail
+                    space = self.recipeSpaceAvailable(recipe)
+                    if space < count:
+                        count = space
             if (not recipe) or (count <= 0):
                 if lastRecipe:
                     self.finishProductionRun(lastRecipe)

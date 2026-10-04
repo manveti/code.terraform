@@ -1,3 +1,5 @@
+import production_map
+
 SLEEP_INTERVAL = 0.1
 STORAGE_TYPE_WAREHOUSE = "warehouse"
 STORAGE_TYPE_LARGE_WAREHOUSE = "large_warehouse"
@@ -130,11 +132,40 @@ class FluidStorageHandler(StorageHandler):
         return self.storage.level()
 
 
+class InventoryStorageHandler(StorageHandler):
+    """Handler for Inventory"""
+    def __init__(self, itemId):
+        super().__init__(get_component("inventory"), itemId)
+
+    @property
+    def outpost(self):
+        return get_component("outpost_home")
+
+    @property
+    def x(self):
+        return 0
+
+    @property
+    def y(self):
+        return 0
+
+    def valid(self):
+        return True
+
+    def capacity(self):
+        return self.storage.get_size()
+
+    def free(self):
+        return self.storage.get_size() - self.storage.get_used()
+
+
 def getStorage(outpost, itemId, storageType=None):
     outpost = getOutpost(outpost)
     if not outpost:
         return None
     if storageType is None:
+        if (outpost.is_home) and (itemId in production_map.ON_DEMAND):
+            return InventoryStorageHandler(itemId)
         storageType = ITEM_STORAGE_TYPE_MAP.get(itemId, STORAGE_TYPE_LARGEST)
     if type(storageType) == type(""):
         storageType = [storageType]
@@ -171,27 +202,3 @@ def getStorage(outpost, itemId, storageType=None):
             elif building.material() in (itemId, ""):
                 result = StorageHandler(building, itemId)
     return result
-
-
-class InventoryStorageHandler(StorageHandler):
-    """Handler for Inventory"""
-    def __init__(self, itemId):
-        super().__init__(get_component("inventory"), itemId)
-
-    @property
-    def outpost(self):
-        return get_component("outpost_home")
-
-    @property
-    def x(self):
-        return 0
-
-    @property
-    def y(self):
-        return 0
-
-    def capacity(self):
-        return self.storage.get_size()
-
-    def free(self):
-        return self.storage.get_size() - self.storage.get_used()
