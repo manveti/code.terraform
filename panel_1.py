@@ -115,7 +115,7 @@ class ProductionOutpost:
                     storage = producer.getStorage(self.name, itemId)
                     inputs[itemId] = ProductionInput(itemId, fed, storage)
                 for port in recipe.fluid_inputs.keys():
-                    itemId = producer.portToItemId(port)
+                    itemId = production_utils.portToItemId(port)
                     recipeInputs.add(itemId)
                     if itemId in inputs:
                         continue
@@ -141,7 +141,7 @@ class ProductionOutpost:
                 if not recipe.fluid_outputs:
                     continue
                 for port in recipe.fluid_outputs.keys():
-                    itemId = producer.portToItemId(port)
+                    itemId = production_utils.portToItemId(port)
                     if itemId in outputs:
                         continue
                     localStorage = producer.getStorage(self.name, itemId)

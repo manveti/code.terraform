@@ -38,6 +38,11 @@ class ProductionRequester:
             comms.cancel(CHANNEL, msgId)
 
 
+def portToItemId(port):
+    """Translate port name (e.g. "water_in") to material ID (e.g. "water")"""
+    return port.rsplit("_", 1)[0]
+
+
 class ProducerHandler:
     def __init__(self, machine):
         self._comms = None
@@ -71,10 +76,6 @@ class ProducerHandler:
     def getExports(self, itemId):
         return self._exports.get(itemId, set())
 
-    def portToItemId(self, port):
-        """Translate port name (e.g. "water_in") to material ID (e.g. "water")"""
-        return port.rsplit("_", 1)[0]
-
     def recipeIngredientsAvailable(self, recipe):
         """How many instances of the given recipe we have ingredients to produce"""
         minAvail = None
@@ -90,7 +91,7 @@ class ProducerHandler:
         for (port, count) in recipe.fluid_inputs.items():
             itemId = recipe.input_fluid
             if not itemId:
-                itemId = self.portToItemId(port)
+                itemId = portToItemId(port)
             storage = self.getStorage(self.outpost.name, itemId)
             if not storage:
                 return 0
@@ -122,7 +123,7 @@ class ProducerHandler:
                 minSpace = space
         if recipe.fluid_outputs:
             for (portName, count) in recipe.fluid_outputs.items():
-                itemId = self.portToItemId(portName)
+                itemId = portToItemId(portName)
                 storage = self.getStorage(self.outpost.name, itemId)
                 if not storage:
                     return 0
@@ -174,7 +175,7 @@ class ProducerHandler:
                 minRatio = ratio
         if recipe.fluid_outputs:
             for (portName, count) in recipe.fluid_outputs.items():
-                itemId = self.portToItemId(portName)
+                itemId = portToItemId(portName)
                 storage = self.getStorage(self.outpost.name, itemId)
                 if not storage:
                     return 0
@@ -205,7 +206,7 @@ class ProducerHandler:
             return True
         if recipe.fluid_outputs:
             for portName in recipe.fluid_outputs.keys():
-                itemId = self.portToItemId(portName)
+                itemId = portToItemId(portName)
                 if itemId in self.produces:
                     return True
         return False
@@ -231,7 +232,7 @@ class ProducerHandler:
         if not recipe.fluid_outputs:
             return
         for portName in recipe.fluid_outputs.keys():
-            itemId = self.portToItemId(portName)
+            itemId = portToItemId(portName)
             storage = self.getStorage(self.outpost.name, itemId)
             while not storage:
                 sleep(storage_utils.SLEEP_INTERVAL)
@@ -242,7 +243,7 @@ class ProducerHandler:
         if not recipe.fluid_inputs:
             return
         for portName in recipe.fluid_inputs.keys():
-            itemId = self.portToItemId(portName)
+            itemId = portToItemId(portName)
             storage = self.getStorage(self.outpost.name, itemId)
             while not storage:
                 sleep(storage_utils.SLEEP_INTERVAL)

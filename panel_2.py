@@ -12,7 +12,7 @@ class Product:
         self.sourceName = None
         self.destNames = []
         for (outpostName, site) in production_map.PRODUCTION_SITES.items():
-            if itemId in site.exports:
+            if itemId in site.exports.keys():
                 self.sourceName = outpostName
                 self.destNames = sorted(site.exports[itemId])
                 break
