@@ -1,13 +1,17 @@
 SLEEP_INTERVAL = 0.1
-BUY_RESERVE = 1000
+BUY_RESERVE = 10000
 
-collector = get_component("bio_collector_1")
-exchange = get_component("bio_exchange_1")
+collector = get_component(self.outpost.buildings("bio_collector")[0].id)
+exchange = get_component(self.outpost.buildings("bio_exchange")[0].id)
 planet = get_component("nocturna").id
 journal = get_component("journal")
 commander = get_component("commander")
 shop = get_component("shop")
-inventory = get_component("inventory")
+inventoryIn = get_component("inventory")
+inventoryOut = get_component("inventory")
+if not self.outpost.is_home:
+    inventoryIn = get_component_by_name("warehouse_bio_reagents")
+    inventoryOut = get_component_by_name("storage_bin_bio_samples")
 
 def getOrderedFragments():
     ordered = set()
@@ -54,17 +58,18 @@ def processSample():
                 break
             loaded = self.loaded_reagents.get(reagent, 0)
             needed = info.required_recipe[reagent] - loaded
-            toBuy = needed - inventory.count(reagent)
+            toBuy = needed - inventoryIn.count(reagent)
             if toBuy > 0:
                 waitForMoney()
                 shop.buy(reagent, toBuy)
+            #TODO: if not self.outpost.is_home: request and wait for delivery
             self.input.take(reagent, needed)
     while self.extract().status == "output_full":
         sleep(SLEEP_INTERVAL)
     while self.output.send(fragId, 1).status != "ok":
         sleep(SLEEP_INTERVAL)
 
-self.input.connect("inventory")
-self.output.connect("inventory")
+self.input.connect(inventoryIn.id)
+self.output.connect(inventoryOut.id)
 while True:
     processSample()

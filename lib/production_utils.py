@@ -274,12 +274,13 @@ class ProducerHandler:
         return count
 
     def setupProductionRun(self, recipe):
-        result = self.machine.set_recipe(recipe.id)
-        while result.status != "ok":
+        while self.machine.get_recipe() != recipe.id:
+            result = self.machine.set_recipe(recipe.id)
+            if result.status == "ok":
+                break
             if result.status not in ("busy", "output_busy"):
                 print(f"Couldn't set recipe {recipe.id}: {result.message}")
             sleep(storage_utils.SLEEP_INTERVAL)
-            result = self.machine.set_recipe(recipe.id)
         self.connectOutputs(recipe)
         self.connectInputs(recipe)
 
@@ -415,6 +416,8 @@ class ProducerHandler:
                     if avail < count:
                         count = avail
                     space = self.recipeSpaceAvailable(recipe)
+                    if (lastRecipe) and (recipe.id != lastRecipe.id):
+                        space -= self.machine.output.count()
                     if space < count:
                         count = space
             if (not recipe) or (count <= 0):

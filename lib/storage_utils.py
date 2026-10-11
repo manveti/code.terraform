@@ -109,7 +109,11 @@ class WarehouseStorageHandler(StorageHandler):
     """Handler for WarehouseSlot"""
     def __init__(self, warehouse, slot, itemId):
         super().__init__(warehouse, itemId)
-        self.slot = slot
+        self.slotIdx = slot.index
+
+    @property
+    def slot(self):
+        return self.storage.slots()[self.slotIdx]
 
     def valid(self):
         itemId = self.slot.item

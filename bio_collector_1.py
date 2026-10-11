@@ -1,6 +1,6 @@
 SLEEP_INTERVAL = 0.1
 
-exchange = get_component("bio_exchange_1")
+exchange = get_component(self.outpost.buildings("bio_exchange")[0].id)
 planet = get_component("nocturna").id
 journal = get_component("journal")
 

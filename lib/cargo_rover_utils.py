@@ -5,10 +5,18 @@ import storage_utils
 
 class CargoRoverHandler(rover_utils.RoverHandler):
     #TODO: make "thread-safe"; bins and the like are fine, but warehouses have one i/o port for multiple slots
+    def cargoCount(self, itemId):
+        count = 0
+        for stack in self.rover.cargo.stacks():
+            if stack.id != itemId:
+                continue
+            count += stack.count
+        return count
+    
     def loadFromStorage(self, storage, itemId, count=None):
         self.moveTo(storage.x, storage.y)
         if (count is None) or (count > storage.count()):
-            count = storage.count
+            count = storage.count()
         roverFree = self.rover.cargo.capacity() - self.rover.cargo.count()
         if count > roverFree:
             count = roverFree
@@ -27,8 +35,8 @@ class CargoRoverHandler(rover_utils.RoverHandler):
         self.moveTo(storage.x, storage.y)
         if (count is None) or (count > storage.free()):
             count = storage.free()
-        if count > self.rover.cargo.count():
-            count = self.rover.cargo.count()
+        if count > self.cargoCount(itemId):
+            count = self.cargoCount(itemId)
         storage.connect(self.rover.output)
         while count > 0:
             result = self.rover.output.send(itemId, count)

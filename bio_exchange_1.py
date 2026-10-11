@@ -1,6 +1,8 @@
 SLEEP_INTERVAL = 0.1
 
 inventory = get_component("inventory")
+if not self.outpost.is_home:
+    inventory = get_component_by_name("storage_bin_bio_samples")
 
 def outstandingCount(order):
     return sum(order.requires.values()) - sum(order.delivered.values())
@@ -57,6 +59,6 @@ def deliverOrder():
         while self.deliver().status == "ok":
             pass
 
-self.input.connect("inventory")
+self.input.connect(inventory.id)
 while True:
     deliverOrder()
