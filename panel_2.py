@@ -1,6 +1,7 @@
 import production_map
 import storage_utils
 
+clock = get_component("clock")
 fleet = get_component("fleet")
 
 
@@ -84,11 +85,16 @@ class Product:
 
 
 products = []
-for site in production_map.PRODUCTION_SITES.values():
-    products.extend(Product(itemId) for itemId in site.exports.keys())
-products.sort(key=lambda product: product.name)
+lastDay = 0
 
 while True:
+    today = clock.get_day()
+    if (today > lastDay) or (not products):
+        products = []
+        for site in production_map.PRODUCTION_SITES.values():
+            products.extend(Product(itemId) for itemId in site.exports.keys())
+        products.sort(key=lambda product: product.name)
+        lastDay = today
     panel.clear()
     midpoint = panel.width() / 2
     panel.divider(midpoint, 0, midpoint, panel.height())

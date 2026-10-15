@@ -8,6 +8,8 @@ INPUT_STATUS_EMPTY = 1
 INPUT_STATUS_VALID = 2
 INPUT_STATUS_FULL = 3
 
+clock = get_component("clock")
+
 
 class ProductionInput:
     def __init__(self, itemId, fed, storage):
@@ -183,15 +185,15 @@ class ProductionOutpost:
             if status <= INPUT_STATUS_INVALID:
                 continue
             validInputs += 1
+            localCount += output.localCount()
+            fullCount += output.fullCount()
+            localCapacity += output.localCapacity()
+            fullCapacity += output.fullCapacity()
             if status <= INPUT_STATUS_EMPTY:
                 continue
             nonemptyInputs += 1
             if status >= INPUT_STATUS_FULL:
                 fullInputs += 1
-            localCount += output.localCount()
-            localCapacity += output.localCapacity()
-            fullCount += output.fullCount()
-            fullCapacity += output.fullCapacity()
         overallStatus = "error"
         if self.valid:
             overallStatus = "running"
@@ -293,13 +295,18 @@ class ProductionOutpost:
             y += 28
 
 
-outposts = [ProductionOutpost(name) for name in production_map.PRODUCTION_SITES.keys()]
-outposts.sort(key=lambda outpost: outpost.name)
-outpostsByName = {outpost.name: outpost for outpost in outposts}
-details = [OVERVIEW] + [o.name for o in outposts]
+outposts = []
+details = []
+lastDay = 0
 
-#TODO: call updateLinks (or maybe even regen outposts) every once in a while
 while True:
+    today = clock.get_day()
+    if (today > lastDay) or (not outposts) or (not details):
+        outposts = [ProductionOutpost(name) for name in production_map.PRODUCTION_SITES.keys()]
+        outposts.sort(key=lambda outpost: outpost.name)
+        outpostsByName = {outpost.name: outpost for outpost in outposts}
+        details = [OVERVIEW] + [o.name for o in outposts]
+        lastDay = today
     panel.clear()
     w = panel.width() - 2
     detailSel = panel.combo("details", 1, 0, w, details, default=OVERVIEW, size=28)
