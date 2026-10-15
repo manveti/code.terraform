@@ -104,6 +104,7 @@ class ChargerHandler:
                     print(f"Skipping {vehicleId}; closer station should handle")
                     self.skips[msg.id] = skipCount + 1
                     continue
+                print(f"Exceeded max skips for {vehicleId}; taking responsibility")
             msg = comms.receive(CHANNEL, msg.id)
             if msg.status == "ok":
                 print(f"Handling requested charge for {vehicleId}")

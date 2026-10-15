@@ -40,7 +40,9 @@ class ProductionRequester:
 
 def portToItemId(port):
     """Translate port name (e.g. "water_in") to material ID (e.g. "water")"""
-    return port.rsplit("_", 1)[0]
+    if hasattr(port, "rsplit"):
+        return port.rsplit("_", 1)[0]
+    return port.rpartition("_")[2]
 
 
 class ProducerHandler:
@@ -396,7 +398,7 @@ class ProducerHandler:
                 result = comms.receive(CHANNEL, msg.id)
                 if result.status != "ok":
                     continue
-            return (msg.value["item"], count)
+            return (recipe, count)
 
     def productionLoop(self, batch=DEFAULT_BATCH_SIZE):
         lastRecipe = None
